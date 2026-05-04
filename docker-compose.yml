@@ -1,0 +1,60 @@
+﻿version: '3.8'
+
+services:
+  # PostgreSQL Database (optional for production)
+  # db:
+  #   image: postgres:15
+  #   environment:
+  #     POSTGRES_USER: taskuser
+  #     POSTGRES_PASSWORD: taskpass
+  #     POSTGRES_DB: taskdb
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./app.db
+      - SECRET_KEY=your-secret-key-for-docker
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+    command: python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+
+  # Redis Cache (optional for scalability)
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+
+volumes:
+  postgres_data:
+
+# Usage:
+# docker-compose up
+# 
+# Then visit:
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8000
+# Swagger Docs: http://localhost:8000/docs
